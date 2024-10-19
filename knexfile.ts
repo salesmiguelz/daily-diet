@@ -4,7 +4,10 @@ export default {
     connection: {
       filename: "./src/database/dev.sqlite3"
     },
-    useNullAsDefault: true
+    useNullAsDefault: true,
+    migrations: {
+      directory: './src/migrations'
+    }
   },
 
   staging: {
