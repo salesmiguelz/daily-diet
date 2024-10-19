@@ -1,9 +1,15 @@
 import fastify from 'fastify'
+import mealsRoutes from './routes/meals'
 
-const app = fastify();
+const app = fastify()
 
-app.listen({
-    port: 3333
-}).then(() => {
-    console.log('Server is up and running!')
+app.register(mealsRoutes, {
+  prefix: 'meals',
 })
+app
+  .listen({
+    port: 3333,
+  })
+  .then(() => {
+    console.log('Server is up and running!')
+  })
