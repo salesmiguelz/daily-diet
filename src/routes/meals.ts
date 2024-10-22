@@ -70,6 +70,7 @@ export default async (app: FastifyInstance) => {
         dateAndTime,
         isWithinDiet,
         user_id: userId,
+        created_at: new Date(),
       })
       reply.status(201).send()
     },
@@ -180,6 +181,69 @@ export default async (app: FastifyInstance) => {
         reply.status(401).send()
       }
       reply.status(200).send()
+    },
+  )
+
+  app.get(
+    '/:id/metrics',
+    { preHandler: [checkUserIsLogged] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const metricsParamsSchema = z.object({
+        id: z.string().uuid(),
+      })
+      const { id: requestedUserId } = metricsParamsSchema.parse(request.params)
+      const { id: loggedUserId } = await knex('users')
+        .select('id')
+        .where('session_id', request.cookies.sessionId)
+        .first()
+
+      if (requestedUserId !== loggedUserId) {
+        reply.status(401).send()
+      }
+
+      const numberOfMeals = await knex('meals')
+        .where('user_id', requestedUserId)
+        .count('* as numberOfMeals')
+        .first()
+
+      const mealsWithinDiet = await knex('meals')
+        .where({
+          user_id: requestedUserId,
+          isWithinDiet: true,
+        })
+        .count('* as mealsWithinDiet')
+        .first()
+
+      const mealsOutsideDiet = await knex('meals')
+        .where({
+          user_id: requestedUserId,
+          isWithinDiet: false,
+        })
+        .count('* as mealsOutsideDiet')
+        .first()
+
+      const meals = await knex('meals')
+        .select('isWithinDiet')
+        .where('user_id', requestedUserId)
+        .orderBy('created_at', 'desc')
+
+      let streakCounter = 0
+      const streakArray: number[] = []
+      meals.forEach((meal) => {
+        if (meal.isWithinDiet) {
+          streakCounter++
+        } else {
+          streakArray.push(streakCounter)
+          streakCounter = 0
+        }
+      })
+      const bestStreakOfMealWithinDiet = Math.max(...streakArray)
+      reply.status(200).send({
+        ...numberOfMeals,
+        ...mealsWithinDiet,
+        ...mealsOutsideDiet,
+        bestStreakOfMealWithinDiet,
+      })
     },
   )
 }
