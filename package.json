@@ -4,7 +4,7 @@
   "description": "App to manage your daily diet",
   "main": "index.js",
   "scripts": {
-    "test": "vitest",
+    "test": "vitest --no-file-parallelism",
     "dev": "tsx watch ./src/server.ts",
     "knex": "node --import tsx ./node_modules/knex/bin/cli.js --knexfile ./knexfile.ts"
   },
