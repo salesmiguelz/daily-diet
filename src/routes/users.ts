@@ -30,7 +30,9 @@ export default async (app: FastifyInstance) => {
     const user = await knex('users').select('id').where('email', email).first()
 
     if (!user) {
-      reply.status(404)
+      reply.status(404).send({
+        error: 'User not found!',
+      })
     }
 
     const sessionId = randomUUID()
