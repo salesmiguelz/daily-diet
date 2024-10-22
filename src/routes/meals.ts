@@ -64,15 +64,17 @@ export default async (app: FastifyInstance) => {
       })
 
       const { name, dateAndTime, isWithinDiet } = meal.parse(request.body)
-      await knex('meals').insert({
-        id: randomUUID(),
-        name,
-        dateAndTime,
-        isWithinDiet,
-        user_id: userId,
-        created_at: new Date(),
-      })
-      reply.status(201).send()
+      const createMealResponse = await knex('meals')
+        .insert({
+          id: randomUUID(),
+          name,
+          dateAndTime,
+          isWithinDiet,
+          user_id: userId,
+          created_at: new Date(),
+        })
+        .returning('*')
+      reply.status(201).send(...createMealResponse)
     },
   )
 
@@ -148,7 +150,6 @@ export default async (app: FastifyInstance) => {
         .where({ id, user_id: userId })
 
       if (!updatedMeal) {
-        console.log('entrei')
         reply.status(401).send()
       }
 
@@ -237,7 +238,9 @@ export default async (app: FastifyInstance) => {
           streakCounter = 0
         }
       })
-      const bestStreakOfMealWithinDiet = Math.max(...streakArray)
+      const bestStreakOfMealWithinDiet = streakArray.length
+        ? Math.max(...streakArray)
+        : streakCounter
       reply.status(200).send({
         ...numberOfMeals,
         ...mealsWithinDiet,
