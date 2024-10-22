@@ -5,24 +5,69 @@ import { randomUUID } from 'crypto'
 
 export default async (app: FastifyInstance) => {
   app.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
-    const meals = await knex('meals').select('*')
+    const { id: userId } = await knex('users')
+      .select('id')
+      .where('session_id', request.cookies.sessionId)
+      .first()
 
-    return reply.send({ meals })
+    const meals = await knex('meals').select('*').where('user_id', userId)
+    reply.status(200).send({ meals })
   })
 
   app.get('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id: userId } = await knex('users')
+      .select('id')
+      .where('session_id', request.cookies.sessionId)
+      .first()
+
     const getMealParamsSchema = z.object({
       id: z.string().uuid(),
     })
 
     const { id } = getMealParamsSchema.parse(request.params)
 
-    const meal = await knex('meals').where('id', id).first()
+    const meal = await knex('meals')
+      .where({
+        id,
+        user_id: userId,
+      })
+      .first()
 
-    reply.send({ meal })
+    if (!meal) {
+      reply.status(403).send()
+    }
+
+    reply.status(200).send({ meal })
+  })
+  app.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id: userId } = await knex('users')
+      .select('id')
+      .where('session_id', request.cookies.sessionId)
+      .first()
+
+    const meal = z.object({
+      name: z.string(),
+      dateAndTime: z.string().datetime(),
+      isWithinDiet: z.boolean(),
+    })
+
+    const { name, dateAndTime, isWithinDiet } = meal.parse(request.body)
+    await knex('meals').insert({
+      id: randomUUID(),
+      name,
+      dateAndTime,
+      isWithinDiet,
+      user_id: userId,
+    })
+    reply.status(201).send()
   })
 
   app.patch('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id: userId } = await knex('users')
+      .select('id')
+      .where('session_id', request.cookies.sessionId)
+      .first()
+
     const patchMealParamsSchema = z.object({
       id: z.string().uuid(),
     })
@@ -40,16 +85,24 @@ export default async (app: FastifyInstance) => {
     const { id } = patchMealParamsSchema.parse(request.params)
     const mealFieldsToBePatched = patchMealBodySchema.parse(request.body)
 
-    await knex('meals')
+    const updatedMeal = await knex('meals')
       .update({
         ...mealFieldsToBePatched,
       })
-      .where('id', id)
+      .where({ id, user_id: userId })
 
-    reply.send(200)
+    if (!updatedMeal) {
+      reply.status(403).send()
+    }
+
+    reply.status(200).send()
   })
 
   app.put('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id: userId } = await knex('users')
+      .select('id')
+      .where('session_id', request.cookies.sessionId)
+      .first()
     const updateMealParamsSchema = z.object({
       id: z.string().uuid(),
     })
@@ -65,41 +118,43 @@ export default async (app: FastifyInstance) => {
       request.body,
     )
 
-    await knex('meals')
+    const updatedMeal = await knex('meals')
       .update({
         name,
         dateAndTime,
         isWithinDiet,
       })
-      .where('id', id)
+      .where({ id, user_id: userId })
 
-    reply.send(200)
+    if (!updatedMeal) {
+      console.log('entrei')
+      reply.status(403).send()
+    }
+
+    reply.status(200).send()
   })
 
-  app.delete('/', async (request: FastifyRequest, reply: FastifyReply) => {
+  app.delete('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id: userId } = await knex('users')
+      .select('id')
+      .where('session_id', request.cookies.sessionId)
+      .first()
     const deleteMealParamsSchema = z.object({
       id: z.string().uuid(),
     })
 
     const { id } = deleteMealParamsSchema.parse(request.params)
 
-    await knex('meals').delete(id)
+    const deletedMeal = await knex('meals')
+      .where({
+        id,
+        user_id: userId,
+      })
+      .del()
 
-    return reply.send(200)
-  })
-  app.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
-    const meal = z.object({
-      name: z.string(),
-      dateAndTime: z.string().datetime(),
-      isWithinDiet: z.boolean(),
-    })
-    const { name, dateAndTime, isWithinDiet } = meal.parse(request.body)
-    await knex('meals').insert({
-      id: randomUUID(),
-      name,
-      dateAndTime,
-      isWithinDiet,
-    })
-    return reply.send(201)
+    if (!deletedMeal) {
+      reply.status(403).send()
+    }
+    reply.status(200).send()
   })
 }

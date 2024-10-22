@@ -27,26 +27,22 @@ export default async (app: FastifyInstance) => {
     })
 
     const { email } = loginUserBodySchema.parse(request.body)
+    const user = await knex('users').select('id').where('email', email).first()
 
-    const loggedUser = await knex('users')
-      .select('id', 'session_id')
-      .where('email', email)
-      .first()
+    if (!user) {
+      reply.status(404)
+    }
 
     const sessionId = randomUUID()
-    await knex('users')
-      .update({
-        session_id: sessionId,
-      })
-      .where('id', loggedUser.id)
 
+    await knex('users').where('id', user.id).update('session_id', sessionId)
     reply
-      .send({
-        sessionId,
-      })
-      .cookie('session_id', sessionId, {
+      .cookie('sessionId', sessionId, {
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 7 days
+      })
+      .send({
+        sessionId,
       })
   })
 }
