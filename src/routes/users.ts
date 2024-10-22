@@ -18,7 +18,7 @@ export default async (app: FastifyInstance) => {
       email,
     })
 
-    reply.send(200)
+    reply.send(201)
   })
 
   app.post('/login', async (request: FastifyRequest, reply: FastifyReply) => {
