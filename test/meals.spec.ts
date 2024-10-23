@@ -3,7 +3,7 @@ import { app } from '../src/app'
 import supertest, { Response } from 'supertest'
 import { execSync } from 'child_process'
 
-describe.skip('Meals Routes', () => {
+describe('Meals Routes', () => {
   let loggedUserResponse: Response
   const meal = {
     name: 'Ratatouille',

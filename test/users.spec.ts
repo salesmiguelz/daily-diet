@@ -19,7 +19,16 @@ describe('User Routes', () => {
       name: 'John Marston',
     }
 
-    await supertest(app.server).post('/users').send(user).expect(201)
+    const createUserResponse = await supertest(app.server)
+      .post('/users')
+      .send(user)
+
+    expect(createUserResponse.body).toEqual({
+      id: expect.any(String),
+      email: user.email,
+      name: user.name,
+      session_id: null,
+    })
   })
 
   it('should be able to log a user', async () => {
