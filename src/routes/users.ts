@@ -12,13 +12,15 @@ export default async (app: FastifyInstance) => {
 
     const { name, email } = createUserBodySchema.parse(request.body)
 
-    await knex('users').insert({
-      id: randomUUID(),
-      name,
-      email,
-    })
+    const createdUser = await knex('users')
+      .insert({
+        id: randomUUID(),
+        name,
+        email,
+      })
+      .returning('*')
 
-    reply.status(201)
+    reply.status(201).send(...createdUser)
   })
 
   app.post('/login', async (request: FastifyRequest, reply: FastifyReply) => {
