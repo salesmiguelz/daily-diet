@@ -1,7 +1,7 @@
 export default {
   client: 'sqlite3',
   connection: {
-    filename: './src/database/dev.db',
+    filename: './database/dev.db',
   },
   useNullAsDefault: true,
   migrations: {

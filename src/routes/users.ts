@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
-import knex from '../database/database-connection'
+import knex from '../../database/database-connection'
+
 import { z } from 'zod'
 import { randomUUID } from 'crypto'
 

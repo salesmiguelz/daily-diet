@@ -1,4 +1,4 @@
 node_modules
-src/database/*.db
+database/*.db
 .env
 .env.test

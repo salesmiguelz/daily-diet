@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
-import knex from '../database/database-connection'
+import knex from '../../database/database-connection'
 import { randomUUID } from 'crypto'
 import checkUserIsLogged from '../middleware/check-user-is-logged'
 
