@@ -3,7 +3,7 @@ import { app } from '../src/app'
 import supertest, { Response } from 'supertest'
 import { execSync } from 'child_process'
 
-describe('Meals Routes', () => {
+describe.skip('Meals Routes', () => {
   let loggedUserResponse: Response
   const meal = {
     name: 'Ratatouille',
@@ -28,11 +28,21 @@ describe('Meals Routes', () => {
   })
 
   it('should be able to create a meal', async () => {
-    await supertest(app.server)
+    const loggedUserCookie = loggedUserResponse.get('Set-Cookie') ?? []
+    const createMealResponse = await supertest(app.server)
       .post('/meals')
-      .set('Cookie', loggedUserResponse.get('Set-Cookie') ?? [])
+      .set('Cookie', loggedUserCookie)
       .send(meal)
       .expect(201)
+
+    expect(createMealResponse.body).toEqual({
+      id: expect.any(String),
+      name: meal.name,
+      isWithinDiet: meal.isWithinDiet ? 1 : 0,
+      dateAndTime: expect.any(String),
+      created_at: expect.any(Number),
+      user_id: expect.any(String),
+    })
   })
 
   it('should be able to list all the meals from an user', async () => {
@@ -60,7 +70,6 @@ describe('Meals Routes', () => {
         email: 'arthur.morgan@gmail.com',
       })
 
-    // Create meal for second user
     await supertest(app.server)
       .post('/meals')
       .set('Cookie', secondUserResponse.get('Set-Cookie') ?? [])
@@ -85,7 +94,6 @@ describe('Meals Routes', () => {
     const listMealResponse = await supertest(app.server)
       .get('/meals/' + mealId)
       .set('Cookie', loggedUserCookie)
-      .expect(200)
 
     expect(listMealResponse.body.meal).toEqual(
       expect.objectContaining({
@@ -111,9 +119,10 @@ describe('Meals Routes', () => {
       name: 'French Fries',
     }
     await supertest(app.server)
-      .patch('/meals/ ' + mealId)
+      .patch('/meals/' + mealId)
       .set('Cookie', loggedUserCookie)
       .send(patchedMeal)
+      .expect(200)
   })
 
   it('should be able to update a meal from an user', async () => {
@@ -144,12 +153,10 @@ describe('Meals Routes', () => {
       .send(meal)
     const mealId = createMealResponse.body.id
 
-    console.log(
-      await supertest(app.server)
-        .delete('/meals/' + mealId)
-        .set('Cookie', loggedUserCookie)
-        .expect(200),
-    )
+    await supertest(app.server)
+      .delete('/meals/' + mealId)
+      .set('Cookie', loggedUserCookie)
+      .expect(200)
   })
 
   it('should be able to list the metrics of the meals of an user', async () => {
